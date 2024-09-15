@@ -50,7 +50,7 @@ char init_path[BUFSIZ];
  * At start-up, bkmodel == 0, 1, or 2 means BK-0010, 3 means BK-0011M.
  * During simulation, bkmodel == 0 is BK-0010, 1 is BK-0011M.
  */
-flag_t bkmodel = 3; /* default BK model */
+flag_t bkmodel = 1; /* default BK model */
 flag_t terak = 0; /* by default we emulate BK */
 flag_t fake_disk = 1; /* true for BK-0011M and bkmodel == 2 */
 
@@ -642,12 +642,13 @@ int flag;
 	 * Run until told to stop.
 	 */
 
+#ifdef __EMSCRIPTEN__
 	emscripten_set_main_loop_arg(&handle_one_frame, &machine_state, 100, 1);
-	/*
+#else
 	do {
 		handle_one_instruction(&machine_state);
 	} while( machine_state.flag );
-	 */
+#endif
 
 	signal( SIGINT, SIG_DFL );
 }
