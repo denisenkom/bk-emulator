@@ -1,4 +1,5 @@
 #include "defines.h"
+#include "tape.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/ioctl.h>

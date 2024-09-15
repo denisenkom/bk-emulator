@@ -29,6 +29,7 @@
 
 
 #include "defines.h"
+#include "scr.h"
 #include <libintl.h>
 #define _(String) gettext (String)
 

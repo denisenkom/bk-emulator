@@ -107,6 +107,7 @@ ev_fire( int priority )
 	/* fprintf(stderr, "Earliest is %g\n", earliest); */
 }
 
+void addtocybuf(int val);
 
 /*
  * service() - Handle a Trap.

@@ -55,12 +55,12 @@ int halt(pdp_regs *p) {
 	io_stop_happened = 4;
 	return CPU_HALT;
 }
-int iot() { return CPU_IOT; }
-int emt() { return CPU_EMT; }
-int trap() { return CPU_TRAP; }
-int bpt() { return CPU_BPT; }
-int fis() { return CPU_ILLEGAL; }		/* fis() would be fun! */
-int illegal() { return CPU_ILLEGAL; }
+int iot(pdp_regs *p) { return CPU_IOT; }
+int emt(pdp_regs *p) { return CPU_EMT; }
+int trap(pdp_regs *p) { return CPU_TRAP; }
+int bpt(pdp_regs *p) { return CPU_BPT; }
+int fis(pdp_regs *p) { return CPU_ILLEGAL; }		/* fis() would be fun! */
+int illegal(pdp_regs *p) { return CPU_ILLEGAL; }
 /*
  * mark() - Restore stack and jump.
  */

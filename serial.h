@@ -1,0 +1,1 @@
+void serial_write(d_word w);

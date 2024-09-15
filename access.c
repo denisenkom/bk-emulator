@@ -21,6 +21,7 @@
 
 
 #include "defines.h"
+#include "access.h"
 #include <libintl.h>
 #define _(String) gettext (String)
 
@@ -116,11 +117,27 @@ tcons_write(c_addr a, d_word d) {
 	return OK;
 }
 
+tcons_write_byte(c_addr a, d_byte d) {
+	switch (a & 077) {
+		case 064:
+			fprintf(stderr, "Writing %06o: %06o\n", a, d);
+			break;
+		case 066:
+			// fprintf(stderr, "Writing %03o to console port %06o\n", d, a);
+			if (d != '\n' && d < 32 || d >= 127)
+				fprintf(stderr, "<%o>", d);
+			else
+				fprintf(stderr, "%c", d);
+			break;
+	}
+	return OK;
+}
+
 pdp_qmap qmap_terak[] = {
 	{ TERAK_DISK_REG, TERAK_DISK_SIZE, tdisk_init, tdisk_read,
 	tdisk_write, tdisk_bwrite },
-	{ 0177564, 4, q_null, tcons_read, tcons_write, tcons_write }, 
-	{ 0177764, 4, q_null, tcons_read, tcons_write, tcons_write }, 
+	{ 0177564, 4, q_null, tcons_read, tcons_write, tcons_write_byte },
+	{ 0177764, 4, q_null, tcons_read, tcons_write, tcons_write_byte },
 	{ 0177744, 2, q_null, port_read, port_write, port_bwrite },
 	{ 0177560, 2, q_null, port_read, port_write, port_bwrite },
 	{ 0173000, 0200, q_null, terak_read, q_err, q_errb },

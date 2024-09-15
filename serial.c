@@ -1,4 +1,5 @@
 #include "defines.h"
+#include "serial.h"
 
 #define READY_IN	0200
 #define READY_OUT	040

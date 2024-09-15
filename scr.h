@@ -18,3 +18,6 @@
 
 extern int horsize, vertsize;
 
+void scr_param_change(int pal, int buf);
+void scr_sync();
+void scr_flush();

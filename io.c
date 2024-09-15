@@ -1,4 +1,7 @@
 #include "defines.h"
+#include "tape.h"
+#include "access.h"
+#include "serial.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/ioctl.h>

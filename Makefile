@@ -30,8 +30,8 @@
 # Change as needed
 #
 
-CC = gcc -std=gnu89 -Wno-error=implicit-function-declaration -Wno-error=return-type # -I/usr/local/Cellar/sdl2/2.28.4/include
-LD = gcc
+CC = emcc -std=gnu89 -Wno-error=implicit-function-declaration -Wno-error=return-type -I/usr/local/Cellar/sdl2/2.30.7/include
+LD = emcc
 CFLAGS = -g -DSHIFTS_ALLOWED -DEIS_ALLOWED
 # CFLAGS = -O4 -fomit-frame-pointer # -DSHIFTS_ALLOWED
 
@@ -39,7 +39,7 @@ CFLAGS = -g -DSHIFTS_ALLOWED -DEIS_ALLOWED
 # Targets
 #
 
-TARGET = bk
+TARGET = bk.html
 UTILS = maketape readtape
 
 #
@@ -67,14 +67,14 @@ everything:	$(TARGET) $(UTILS)
 	touch everything
 
 .c.o:
-	$(CC) -c $(CFLAGS) $<
+	$(CC) -g -c $(CFLAGS) $<
 
 icon.c: pngtorgba bk.png
 	touch icon.c
 	if [ ! -s icon.c ] ; then ./pngtorgba bk.png > icon.c ; fi
 
 $(TARGET):	$(OBJS)
-	$(LD) $(CFLAGS) -o $(TARGET) $(OBJS) /usr/lib/x86_64-linux-gnu/libSDL.so $(GETTEXT_LIB) -lpthread
+	$(LD) $(CFLAGS) -o $(TARGET) $(OBJS) $(GETTEXT_LIB) -g -s USE_SDL=2 --embed-file Rom@usr/share/bk --embed-file TETRIS01.BIN
 
 readtape: readtape.c
 	$(CC) $(CFLAGS) -o readtape $(GETTEXT_LIB) readtape.c

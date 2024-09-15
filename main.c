@@ -30,6 +30,9 @@
 
 #include "defines.h"
 #include "scr.h"
+#include "access.h"
+#include "disk.h"
+#include "tape.h"
 #include <SDL2/SDL.h>
 #include <libintl.h>
 #include <locale.h>
@@ -428,73 +431,61 @@ addtocybuf(int val) {
 	cybufidx = (cybufidx+1) % 1024;
 }
 
-int
-run_2( p, flag )
-register pdp_regs *p;
-int flag;
-{
-	register int result;		/* result of execution */
+struct machine_state {
+	Uint32 last_screen_update;
+	int rtt;
+	int flag;
+	// constants
+	pdp_regs *p;
+	double timing_delta;
+};
+
+void handle_one_instruction(struct machine_state * machine_state) {
 	int result2;			/* result of error handling */
-	extern void intr_hand();	/* SIGINT handler */
-	register unsigned priority;	/* current processor priority */
-	int rtt = 0;			/* rtt don't trap yet flag */
+	pdp_regs *p = machine_state->p;
+	double timing_delta = machine_state->timing_delta;
 	d_word oldpc;
 	static char buf[80];
 
-	/*
-	 * Clear execution stop flag and install SIGINT handler.
-	 */
-
-	stop_it = 0;
-	signal( SIGINT, intr_hand );
-
-	Uint32 last_screen_update = SDL_GetTicks();
-	double timing_delta = ticks - SDL_GetTicks() * (TICK_RATE/1000.0);
-	c_addr startpc = p->regs[PC];
+	addtocybuf(p->regs[PC]);
 
 	/*
-	 * Run until told to stop.
+	 * Fetch and execute the instruction.
 	 */
 
-	do {
-		addtocybuf(p->regs[PC]);
+	if (traceflag) {
+		extern double io_sound_count;
+		disas(p->regs[PC], buf);
+		if (tracefile) fprintf(tracefile, "%s\t%s\n", buf, state(p));
+		else printf("%s\n", buf);
+	}
+	int result = ll_word( p, p->regs[PC], &p->ir );
+	oldpc = p->regs[PC];
+	p->regs[PC] += 2;
+	if (result == OK) {
+		d_word index = p->ir>>6;
+		result = (itab[index].func)( p );
+		timing(p);
+	}
 
-		/*
-		 * Fetch and execute the instruction.
-		 */
-	
-		if (traceflag) {
-			extern double io_sound_count;
-			disas(p->regs[PC], buf);
-			if (tracefile) fprintf(tracefile, "%s\t%s\n", buf, state(p));
-			else printf("%s\n", buf);
-		}
-		result = ll_word( p, p->regs[PC], &p->ir );
-		oldpc = p->regs[PC];
-		p->regs[PC] += 2;
-		if (result == OK) {
-			result = (itab[p->ir>>6].func)( p );
-			timing(p);
-		}
+	/*
+	 * Mop up the mess.
+	 */
 
-		/*
-		 * Mop up the mess.
-		 */
-
-		if ( result != OK ) {
-			switch( result ) {
+	if ( result != OK ) {
+		switch( result ) {
 			case BUS_ERROR:			/* vector 4 */
 				ticks += 64;
 			case ODD_ADDRESS:
 				fprintf( stderr, _(" pc=%06o, last branch @ %06o\n"),
-					oldpc, last_branch );
+						 oldpc, last_branch );
 				result2 = service( (d_word) 04 );
 				break;
 			case CPU_ILLEGAL:		/* vector 10 */
 #undef VERBOSE_ILLEGAL
 #ifdef VERBOSE_ILLEGAL
 				disas(oldpc, buf);
-				fprintf( stderr, 
+				fprintf( stderr,
 				_("Illegal inst. %s, last branch @ %06o\n"),
 					buf, last_branch );
 #endif
@@ -517,7 +508,7 @@ int flag;
 				result2 = OK;
 				break;
 			case CPU_RTT:
-				rtt = 1;
+				machine_state->rtt = 1;
 				result2 = OK;
 				break;
 			case CPU_HALT:
@@ -527,88 +518,136 @@ int flag;
 			default:
 				fprintf( stderr, _("\nUnexpected return.\n") );
 				fprintf( stderr, _("exec=%d pc=%06o ir=%06o\n"),
-					result, oldpc, p->ir );
-				flag = 0;
+						 result, oldpc, p->ir );
+				machine_state->flag = 0;
 				result2 = OK;
 				break;
-			}
-			if ( result2 != OK ) {
-				fprintf( stderr, _("\nDouble trap @ %06o.\n"), oldpc);
-				lc_word(0177716, &p->regs[PC]);
-				p->regs[PC] &= 0177400;
-				/* p->regs[SP] = 01000;	/* whatever */
-			}
 		}
-
-		if (( p->psw & 020) && (rtt == 0 )) {		/* trace bit */
-			if ( service((d_word) 014 ) != OK ) {
-				fprintf( stderr, _("\nDouble trap @ %06o.\n"), p->regs[PC]);
-				lc_word(0177716, &p->regs[PC]);
-				p->regs[PC] &= 0177400;
-				p->regs[SP] = 01000;	/* whatever */
-			}
+		if ( result2 != OK ) {
+			fprintf( stderr, _("\nDouble trap @ %06o.\n"), oldpc);
+			lc_word(0177716, &p->regs[PC]);
+			p->regs[PC] &= 0177400;
+			/* p->regs[SP] = 01000;	/* whatever */
 		}
-		rtt = 0;
-		p->total++;
+	}
 
-		if (nflag)
-			sound_flush();
-
-		if (bkmodel && ticks >= ticks_timer) {
-			scr_sync();
-			if (timer_intr_enabled) {
-				ev_register(TIMER_PRI, service, 0, 0100);
-			}
-			ticks_timer += half_frame_delay;
+	if (( p->psw & 020) && (machine_state->rtt == 0 )) {		/* trace bit */
+		if ( service((d_word) 014 ) != OK ) {
+			fprintf( stderr, _("\nDouble trap @ %06o.\n"), p->regs[PC]);
+			lc_word(0177716, &p->regs[PC]);
+			p->regs[PC] &= 0177400;
+			p->regs[SP] = 01000;	/* whatever */
 		}
+	}
+	machine_state->rtt = 0;
+	p->total++;
 
-		if (ticks >= ticks_screen) {
-		    /* In full speed, update every 40 real ms */
-		    if (fullspeed) {
+	if (nflag)
+		sound_flush();
+
+	if (bkmodel && ticks >= ticks_timer) {
+		scr_sync();
+		if (timer_intr_enabled) {
+			ev_register(TIMER_PRI, service, 0, 0100);
+		}
+		ticks_timer += half_frame_delay;
+	}
+
+	if (ticks >= ticks_screen) {
+		/* In full speed, update every 40 real ms */
+		if (fullspeed) {
 			Uint32 cur_sdl_ticks = SDL_GetTicks();
-		 	if (cur_sdl_ticks - last_screen_update >= 40) {
-			    last_screen_update = cur_sdl_ticks;
-			    scr_flush();
+			if (cur_sdl_ticks - machine_state->last_screen_update >= 40) {
+				machine_state->last_screen_update = cur_sdl_ticks;
+				scr_flush();
 			}
-		    } else {
+		} else {
 			scr_flush();
-		    }
-		    tty_recv();
-		    ticks_screen += frame_delay;
-		    /* In simulated speed, if we're more than 10 ms
-		     * ahead, slow down. Avoid rounding the delay up
-		     * by SDL. If the sound is on, sound buffering
-		     * provides synchronization.
-		     */
-		    if (!fullspeed && !nflag) {
-		    	double cur_delta =
-				ticks - SDL_GetTicks() * (TICK_RATE/1000.0);
+		}
+		tty_recv();
+		ticks_screen += frame_delay;
+		/* In simulated speed, if we're more than 10 ms
+		 * ahead, slow down. Avoid rounding the delay up
+		 * by SDL. If the sound is on, sound buffering
+		 * provides synchronization.
+		 */
+		if (!fullspeed && !nflag) {
+			double cur_delta =
+					ticks - SDL_GetTicks() * (TICK_RATE/1000.0);
 			if (cur_delta - timing_delta > TICK_RATE/100) {
 				int msec = (cur_delta - timing_delta) / (TICK_RATE/1000);
 				SDL_Delay(msec / 10 * 10);
 			}
-		    }
 		}
+	}
 
-		/*
-		 * See if execution should be stopped.  If so
-		 * stop running, otherwise look for events
-		 * to fire.
-		 */
+	/*
+	 * See if execution should be stopped.  If so
+	 * stop running, otherwise look for events
+	 * to fire.
+	 */
 
-		if ( stop_it ) {
-			fprintf( stderr, _("\nExecution interrupted.\n") );
-			flag = 0;
-		} else {
-			priority = ( p->psw >> 5) & 7;
-			if ( pending_interrupts && priority != 7 ) {
-				ev_fire( priority );
-			}
+	if ( stop_it ) {
+		fprintf( stderr, _("\nExecution interrupted.\n") );
+		machine_state->flag = 0;
+	} else {
+		unsigned priority = ( p->psw >> 5) & 7;
+		if ( pending_interrupts && priority != 7 ) {
+			ev_fire( priority );
 		}
-		if (checkpoint(p->regs[PC])) {
-			flag = 0;
-		}
-	} while( flag );
+	}
+	if (checkpoint(p->regs[PC])) {
+		machine_state->flag = 0;
+	}
+}
+
+void handle_one_frame(struct machine_state * machine_state) {
+	int num_instructions = TICK_RATE / 100; // number of instructions per frame at 100 FPS
+	for (int i = 0; i < num_instructions && machine_state->flag; i++) {
+		handle_one_instruction(machine_state);
+	}
+}
+
+int
+run_2( p, flag )
+register pdp_regs *p;
+int flag;
+{
+	//register int result;		/* result of execution */
+	//int result2;			/* result of error handling */
+	extern void intr_hand();	/* SIGINT handler */
+	//register unsigned priority;	/* current processor priority */
+	//int rtt = 0;			/* rtt don't trap yet flag */
+	//d_word oldpc;
+	//static char buf[80];
+
+	/*
+	 * Clear execution stop flag and install SIGINT handler.
+	 */
+
+	stop_it = 0;
+	signal( SIGINT, intr_hand );
+
+	Uint32 last_screen_update = SDL_GetTicks();
+	double timing_delta = ticks - SDL_GetTicks() * (TICK_RATE/1000.0);
+	struct machine_state machine_state;
+	machine_state.last_screen_update = last_screen_update;
+	machine_state.p = p;
+	machine_state.rtt = 0;
+	machine_state.timing_delta = timing_delta;
+	machine_state.flag = flag;
+	//c_addr startpc = p->regs[PC];
+
+	/*
+	 * Run until told to stop.
+	 */
+
+	emscripten_set_main_loop_arg(&handle_one_frame, &machine_state, 100, 1);
+	/*
+	do {
+		handle_one_instruction(&machine_state);
+	} while( machine_state.flag );
+	 */
 
 	signal( SIGINT, SIG_DFL );
 }
