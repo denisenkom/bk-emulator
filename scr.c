@@ -1,5 +1,5 @@
 #include "defines.h"
-#include "SDL2/SDL.h"
+#include "SDL.h"
 #include "scr.h"
 #include <libintl.h>
 #define _(String) gettext (String)
@@ -297,7 +297,7 @@ unsigned char change_req;
 
 void scr_param_change(int pal, int buf) {
 	int cur = current_scan_line();
-	uint i;
+	unsigned int i;
 	for (i = param_change_line; i < cur; i++) {
 		req_palette[2 * i + half_frame] = active_palette;
 		req_page[2 * i + half_frame] = active_page;
@@ -314,7 +314,7 @@ void scr_param_change(int pal, int buf) {
  * requests to the end with the current values.
  */
 void scr_sync() {
-	uint i;
+	unsigned int i;
 	for (i = param_change_line; i < 256; i++) {
 		req_palette[2 * i + half_frame] = active_palette;
 		req_page[2 * i + half_frame] = active_page;

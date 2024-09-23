@@ -2,7 +2,7 @@
 #include "emu2149.h"
 #include <fcntl.h>
 #include <stdio.h>
-#include <sys/ioctl.h>
+//#include <sys/ioctl.h>
 #include <libintl.h>
 #define _(String) gettext (String)
 

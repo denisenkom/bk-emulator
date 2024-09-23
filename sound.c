@@ -1,8 +1,8 @@
 #include "defines.h"
 #include <stdio.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_thread.h>
-#include <SDL2/SDL_mutex.h>
+#include <SDL.h>
+#include <SDL_thread.h>
+#include <SDL_mutex.h>
 #include <libintl.h>
 #define _(String) gettext (String)
 

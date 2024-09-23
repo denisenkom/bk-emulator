@@ -1,21 +1,21 @@
 #include "defines.h"
 #include <fcntl.h>
 #include <stdio.h>
-#include <sys/ioctl.h>
+//#include <sys/ioctl.h>
 #include <libintl.h>
 #define _(String) gettext (String)
 
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <string.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
+//#include <sys/ioctl.h>
+//#include <sys/socket.h>
 #include <sys/types.h>
-#include <sys/time.h>
-#include <sys/uio.h>
-#include <sys/socket.h>
+#include <time.h>
+//#include <sys/uio.h>
+//#include <sys/socket.h>
 
 #ifdef linux
 #include <sys/ioctl.h>

@@ -57,8 +57,20 @@ bconf_t bconf[] = {
 #define NUM_IATTR (sizeof(iconf)/sizeof(iconf_t))
 #define NUM_BATTR (sizeof(bconf)/sizeof(bconf_t))
 
+#ifdef _MSC_VER 
+//not #if defined(_WIN32) || defined(_WIN64) because we have strncasecmp in mingw
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#endif
+
 init_config() {
-	FILE * bkrc = popen("cat $HOME/.bkrc", "r");
+	const char * homedrive = getenv("HOMEDRIVE");
+	const char * homepath = getenv("HOMEPATH");
+	char path_buf[1024];
+	strncpy(path_buf, homedrive, sizeof(path_buf));
+	strncat(path_buf, homepath, sizeof(path_buf));
+	strncat(path_buf, "/.bkrc", sizeof(path_buf));
+	FILE * bkrc = fopen(path_buf, "r");
 	char buf[1024];
 	char name[1024];
 	char sval[1024];
@@ -150,7 +162,7 @@ init_config() {
 		errors++;
 		fprintf(stderr, _("Unknown attribute %s\n"), name);
 	}
-	pclose(bkrc);
+	fclose(bkrc);
 	if (errors) {
 		fprintf(stderr, _("There were %d errors in the configuration file, aborting.\n"), errors);
 		exit(1);

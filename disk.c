@@ -1,8 +1,8 @@
 #include "defines.h"
 #include <fcntl.h>
 #include <stdio.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
+//#include <sys/ioctl.h>
+//#include <sys/mman.h>
 #include <libintl.h>
 #define _(String) gettext (String)
 
@@ -52,11 +52,13 @@ void disk_open(disk_t * pdt, char * name) {
 		close(fd);
 		return;
 	}
+	/*
 	pdt->image = mmap(0, pdt->length, PROT_READ | (pdt->ro ? 0 : PROT_WRITE), MAP_SHARED, fd, 0);
 	if (pdt->image == MAP_FAILED) {
 		pdt->image = 0;
 		perror(name);
 	}
+	*/
 	if (pdt->ro) {
 		fprintf(stderr, _("%s will be read only\n"), name);
 	}
@@ -88,7 +90,7 @@ void disk_finish() {
 	for (i = 0; i < 4; i++) {
 		if (!disks[i].image)
 			continue;
-		munmap(disks[i].image, disks[i].length);
+		//munmap(disks[i].image, disks[i].length);
 	}	
 }
 

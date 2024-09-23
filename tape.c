@@ -1,7 +1,7 @@
 #include "defines.h"
 #include <fcntl.h>
 #include <stdio.h>
-#include <sys/ioctl.h>
+//#include <sys/ioctl.h>
 #include <libintl.h>
 #define _(String) gettext (String)
 
@@ -27,7 +27,7 @@ void tape_init() {
 		fclose(tape_read_file);
 		fake_state = Idle;
 	    } else {
-		pclose(tape_read_file);
+		fclose(tape_read_file);
 	    }
 	    tape_read_file = NULL;
 	}
@@ -38,7 +38,7 @@ void tape_init() {
 		tape_write_file = 0;
 	    }
 	} else if (tape_write_file == NULL) {
-		tape_write_file = popen("readtape", "w");
+		tape_write_file = fopen("readtape", "w");
 		if (tape_write_file) {
 			fprintf(stderr, _("readtape open successful\n"));
 		} else perror("readtape");
@@ -104,7 +104,7 @@ tape_read() {
 	int c2 = fgetc(tape_read_file);
 	if (c2 == EOF) {
 		fprintf(stderr, _("End of tape\n"));
-		pclose(tape_read_file);
+		fclose(tape_read_file);
 		tape_read_file = 0;
 	}
 	delta = c1 << 8;
@@ -156,7 +156,7 @@ tape_read_start() {
 #ifdef VERBOSE_TAPE
 	fprintf(stderr, _("Calling (%s)\n"), buf);
 #endif
-	tape_read_file = popen(buf, "r");
+	tape_read_file = fopen(buf, "r");
 	if (tape_read_file) {
 		tape_read_ticks = ticks;
 	} else perror(unix_filename);
@@ -165,7 +165,7 @@ tape_read_start() {
 void
 tape_read_finish() {
 	if (!tape_read_file) return;
-	pclose(tape_read_file);
+	fclose(tape_read_file);
 	tape_read_file = 0;
 #ifdef VERBOSE_TAPE
 	fprintf(stderr, _("Closed maketape\n"));

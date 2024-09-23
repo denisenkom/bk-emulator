@@ -19,8 +19,8 @@
  */
 
 #include "defines.h"
-#include "SDL2/SDL.h"
-#include "SDL2/SDL_events.h"
+#include "SDL.h"
+#include "SDL_events.h"
 #include <ctype.h>
 #include <libintl.h>
 #define _(String) gettext (String)

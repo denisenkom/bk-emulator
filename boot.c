@@ -56,7 +56,7 @@ void load_rom(unsigned start, char * rompath, unsigned min_size, unsigned max_si
 
 	fprintf(stderr, _("Loading %s..."), path);
 
-	romf = fopen(path, "r");
+	romf = fopen(path, "rb");
 	if (!romf) {
 		fprintf(stderr, _("Couldn't open file.\n"));
 		exit(1);
@@ -66,7 +66,8 @@ void load_rom(unsigned start, char * rompath, unsigned min_size, unsigned max_si
 		int lobyte = getc(romf);
 		int hibyte = getc(romf);
 		d_word data;
-		if (hibyte < 0) break;
+		if (hibyte < 0)
+			break;
 		data = lobyte | hibyte<<8;
 		sc_word(start, data);
 	}

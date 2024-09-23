@@ -35,7 +35,7 @@
 #ifndef DEFINES_INCLUDED
 #define DEFINES_INCLUDED
 #include <sys/types.h>
-#include <sys/time.h>
+#include <time.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <stdio.h>
