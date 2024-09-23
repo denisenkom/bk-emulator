@@ -156,7 +156,7 @@ tape_read_start() {
 #ifdef VERBOSE_TAPE
 	fprintf(stderr, _("Calling (%s)\n"), buf);
 #endif
-	tape_read_file = fopen(buf, "r");
+	tape_read_file = fopen(buf, "rb");
 	if (tape_read_file) {
 		tape_read_ticks = ticks;
 	} else perror(unix_filename);
@@ -198,7 +198,7 @@ void fake_read_strobe() {
 	if (fake_state == Idle && !tape_read_file) {
 		/* First time here, find which file to open */
 		get_emt36_filename();
-		tape_read_file = fopen(unix_filename, "r");
+		tape_read_file = fopen(unix_filename, "rb");
 		fprintf(stderr, _("Will read unix file <%s> under BK name <%s>\n"),
 			unix_filename, bk_filename);
 		fake_state = Addr;

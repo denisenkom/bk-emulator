@@ -418,7 +418,7 @@ char *s;
 	    sscanf(s, "%o", &addr);
 	    do s++; while (isoct(*s) || isspace (*s));
 	}
-	f = fopen(s, "r");
+	f = fopen(s, "rb");
 	if (!f) {
 		perror(s);
 		return;

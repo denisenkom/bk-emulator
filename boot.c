@@ -101,7 +101,7 @@ void load_rom11(d_word * rom, int byte_off, char * rompath, int byte_size) {
 
 	fprintf(stderr, _("Loading %s..."), path);
 
-	FILE * romf = fopen(path, "r");
+	FILE * romf = fopen(path, "rb");
 	if (!romf) {
 		fprintf(stderr, _("Couldn't open file.\n"));
 		exit(1);
