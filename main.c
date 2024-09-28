@@ -27,8 +27,9 @@
  * main.c -  Main routine and setup.
  */
 
-
+#if defined(_WIN32)
 #include <winsock.h>
+#endif
 #include "defines.h"
 #include "scr.h"
 #include <SDL.h>
@@ -94,6 +95,7 @@ flag_t turboflag;	/* "Turbo" mode with doubled clock speed */
 double frame_delay;	/* Delay in ticks between video frames */
 double half_frame_delay;
 
+#ifdef WIN32
 int gettimeofday(struct timeval* tp, struct timezone* tzp)
 {
 	// Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
@@ -114,6 +116,7 @@ int gettimeofday(struct timeval* tp, struct timezone* tzp)
 	tp->tv_usec = (long)(system_time.wMilliseconds * 1000);
 	return 0;
 }
+#endif
 
 /*
  * main()
